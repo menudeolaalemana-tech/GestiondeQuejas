@@ -231,29 +231,35 @@
         }
 
         function login() {
+            // 1. Aquí defines todos tus usuarios y contraseñas
+            const baseDeDatos = {
+                'admin': '1234admin',
+                'rosalina': 'rp1234',
+                'chava': 'sem0987',
+                'rey': 'ort5678',
+                'juan': 'picjua',
+                'mil': '1000chuy',
+                'anel': 'santoyosop',
+                'luis': 'sopvill',
+                'armando': 'avar0987',
+                'ulises': 'andauli'
+            };
 
             const user = document.getElementById('username').value;
-
             const pass = document.getElementById('password').value;
 
-            if((user === 'admin' && pass === '1234') || (user === 'empleado' && pass === '1234')) {
-
+            // 2. La lógica verifica si el usuario existe Y si la contraseña coincide
+            if (baseDeDatos[user] && baseDeDatos[user] === pass) {
+                
                 currentUser = user;
-
                 document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
-
                 document.getElementById('registradoPor').value = currentUser;
-
                 showScreen('registerScreen');
-
                 document.getElementById('fechaRecepcion').valueAsDate = new Date();
 
             } else {
-
-                alert("Incorrecto");
-
+                alert("Usuario o contraseña incorrectos");
             }
-
         }
 
 
@@ -405,6 +411,7 @@
     </script>
 </body>
 </html>
+
 
 
 
