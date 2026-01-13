@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Quejas - La Alemana</title>
+    <style>
+        /* ESTILOS CSS */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        header { background-color: #FFC107; width: 100%; padding: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        h1 { margin: 0; color: #333; }
+        .screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 1000px; margin-top: 30px; display: none; margin-bottom: 50px; }
+        .active { display: block; }
+        .login-box { max-width: 400px; margin: 50px auto; text-align: center; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        input:disabled { background-color: #e9ecef; color: #495057; font-weight: bold; }
+        button { background-color: #FFC107; color: #333; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; transition: background 0.3s; }
+        button:hover { background-color: #e0a800; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-danger:hover { background-color: #c82333; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-success:hover { background-color: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+        th { background-color: #333; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .status-select { padding: 5px; font-size: 0.9em; border-radius: 4px; border: 1px solid #ccc; background-color: white; cursor: pointer; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+        
+        /* Spinner de carga */
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #FFC107; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>La Alemana - Gestión de Clientes</h1>
+        <div id="userInfo" style="font-size: 14px; margin-top: 5px; font-weight: bold;"></div>
+    </header>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Procesando datos en la nube...</p>
+    </div>
+
+    <div id="loginScreen" class="screen active login-box">
+        <h2>Iniciar Sesión</h2>
+        <input type="text" id="username" placeholder="Usuario">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="login()">Ingresar</button>
+        <p style="font-size: 12px; color: gray;">Admin: admin / 1234<br>Empleado: empleado / 1234</p>
+    </div>
+
+    <div id="registerScreen" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Registro de Nueva Queja</h2>
+            <button onclick="changeToTableScreen()">Ver Quejas Registradas</button>
+        </div>
+        <hr>
+        
+        <div class="form-grid">
+            <div class="full-width">
+                <label>Registrado por:</label>
+                <input type="text" id="registradoPor" disabled>
+            </div>
+            <div>
+                <label>Fecha Recibida:</label>
+                <input type="date" id="fechaRecepcion">
+            </div>
+            <div>
+                <label>Fecha Suceso:</label>
+                <input type="date" id="fechaSuceso">
+            </div>
+            <div>
+                <label>Nombre Cliente:</label>
+                <input type="text" id="nomCliente" placeholder="Ej: Juan Pérez">
+            </div>
+            <div>
+                <label>Teléfono Cliente:</label>
+                <input type="text" id="telCliente" placeholder="555-0000">
+            </div>
+            <div class="full-width">
+                <label>Descripción:</label>
+                <textarea id="descripcion" rows="3"></textarea>
+            </div>
+            <div>
+                <label>Categoría:</label>
+                <select id="categoria">
+                    <option value="calidad">calidad</option>
+                    <option value="atención">atención</option>
+                    <option value="servicio">servicio</option>
+                    <option value="otro">otro</option>
+                </select>
+            </div>
+            <div>
+                <label>Distrito:</label>
+                <select id="distrito">
+                    <option value="Distrito 1">Distrito 1</option>
+                    <option value="Distrito 2">Distrito 2</option>
+                    <option value="Distrito 3">Distrito 3</option>
+                    <option value="Distrito 4">Distrito 4</option>
+                    <option value="Distrito 5">Distrito 5</option>
+                    <option value="Distrito 6">Distrito 6</option>
+                </select>
+            </div>
+            <div>
+                <label>Supervisor (SOP):</label>
+                <select id="sop">
+                    <option value="Anel Santoyo">Anel Santoyo</option>
+                    <option value="Jesús Mil">Jesús Mil</option>
+                    <option value="Ulises Anda">Ulises Anda</option>
+                    <option value="Luis Villegas">Luis Villegas</option>
+                    <option value="Armando Vargas">Armando Vargas</option>
+                    <option value="Juan Piceno">Juan Piceno</option>
+                </select>
+            </div>
+            <div>
+                <label>Tienda:</label>
+                <input type="text" id="tienda" placeholder="Ej: Centro Max">
+            </div>
+            <div>
+                <label>Acción:</label>
+                <input type="text" id="accion">
+            </div>
+            <div>
+                <label>Estatus:</label>
+                <select id="estatus">
+                    <option value="activa">activa</option>
+                    <option value="cerrada">cerrada</option>
+                </select>
+            </div>
+        </div>
+        <br>
+        <button class="btn-success" onclick="guardarQuejaCloud()">Registrar Queja (Guardar en Nube)</button>
+        <button class="btn-danger" onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div id="listScreen" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Bitácora de Quejas (Nube)</h2>
+            <button onclick="showScreen('registerScreen')">Nueva Queja</button>
+        </div>
+        <hr>
+        
+        <div style="overflow-x:auto;">
+            <table id="quejasTable">
+                <thead>
+                    <tr>
+                        <th>Fecha Rec.</th>
+                        <th>Registró</th>
+                        <th>Cliente</th>
+                        <th>Supervisor</th>
+                        <th>Distrito</th>
+                        <th>Estatus (Nube)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+        <br>
+        <button class="btn-success" onclick="exportarCSV()">Descargar CSV (Excel)</button>
+        <p style="font-size:12px; color:gray; margin-top:10px;">* Nota: El botón de borrar se ha desactivado por seguridad. Para borrar registros permanentemente, hazlo directo en tu Google Sheet.</p>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN OBLIGATORIA
+        // ==========================================
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT ENTRE LAS COMILLAS:
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/u/0/home/projects/12ptP6jrhnahgVKcW58e_Dhgr_c_v6AbZwE6xkH7sjR340WujpW8kQ3I2/edit";
+        // ==========================================
+
+        let currentUser = "";
+        let globalQuejas = []; // Para guardar los datos descargados
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(div => div.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            if((user === 'admin' && pass === '1234') || (user === 'empleado' && pass === '1234')) {
+                currentUser = user;
+                document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
+                document.getElementById('registradoPor').value = currentUser;
+                showScreen('registerScreen');
+                document.getElementById('fechaRecepcion').valueAsDate = new Date();
+            } else {
+                alert("Incorrecto");
+            }
+        }
+
+        function logout() {
+            if(confirm("Salir?")) {
+                currentUser = "";
+                location.reload();
+            }
+        }
+
+        // --- FUNCIONES DE LA NUBE ---
+
+        function guardarQuejaCloud() {
+            const nomCliente = document.getElementById('nomCliente').value;
+            if(!nomCliente) { alert("Falta nombre cliente"); return; }
+            if(GOOGLE_SCRIPT_URL.includes("PEGA_TU_URL")) { alert("ERROR: No has pegado la URL del Script en el código HTML."); return; }
+
+            showLoading(true);
+
+            // Crear objeto FormData para enviar
+            const form = new FormData();
+            form.append('id', Date.now());
+            form.append('registradoPor', currentUser);
+            form.append('fechaRecepcion', document.getElementById('fechaRecepcion').value);
+            form.append('fechaSuceso', document.getElementById('fechaSuceso').value);
+            form.append('nomCliente', document.getElementById('nomCliente').value);
+            form.append('telCliente', document.getElementById('telCliente').value);
+            form.append('descripcion', document.getElementById('descripcion').value);
+            form.append('categoria', document.getElementById('categoria').value);
+            form.append('distrito', document.getElementById('distrito').value);
+            form.append('sop', document.getElementById('sop').value);
+            form.append('tienda', document.getElementById('tienda').value);
+            form.append('accion', document.getElementById('accion').value);
+            form.append('estatus', document.getElementById('estatus').value);
+
+            // Enviar a Google Sheets
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: form })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if(data.result === 'success') {
+                    alert("¡Queja guardada en la Nube exitosamente!");
+                    limpiarFormulario();
+                } else {
+                    alert("Error al guardar: " + JSON.stringify(data));
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                alert("Error de conexión: " + error);
+            });
+        }
+
+        function changeToTableScreen() {
+            showScreen('listScreen');
+            cargarDatosCloud();
+        }
+
+        function cargarDatosCloud() {
+            showLoading(true);
+            // Peticion GET con parametro action=read
+            fetch(GOOGLE_SCRIPT_URL + "?action=read")
+            .then(res => res.json())
+            .then(data => {
+                globalQuejas = data; // Guardamos en memoria para exportar
+                renderTable(data);
+                showLoading(false);
+            })
+            .catch(err => {
+                showLoading(false);
+                alert("No se pudieron cargar los datos. Revisa tu internet o la URL.");
+            });
+        }
+
+        function renderTable(quejas) {
+            const tbody = document.querySelector('#quejasTable tbody');
+            tbody.innerHTML = "";
+            
+            // Mostrar las mas recientes primero (invertir array)
+            quejas.reverse().forEach(q => {
+                let fecha = q.fechaRecepcion ? q.fechaRecepcion.substring(0,10) : "";
+                
+                let selectEstatus = `
+                    <select class="status-select" onchange="actualizarEstatusCloud(${q.id}, this.value)">
+                        <option value="activa" ${q.estatus === 'activa' ? 'selected' : ''}>activa</option>
+                        <option value="cerrada" ${q.estatus === 'cerrada' ? 'selected' : ''}>cerrada</option>
+                    </select>
+                `;
+
+                let row = `<tr>
+                    <td>${fecha}</td>
+                    <td><b>${q.registradoPor}</b></td>
+                    <td>${q.nomCliente}</td>
+                    <td>${q.sop}</td>
+                    <td>${q.distrito}</td>
+                    <td>${selectEstatus}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function actualizarEstatusCloud(id, nuevoEstatus) {
+            showLoading(true);
+            // Usamos POST pero simulamos update
+            const form = new FormData();
+            form.append('action', 'updateStatus');
+            form.append('id', id);
+            form.append('estatus', nuevoEstatus);
+
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: form })
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                console.log("Estatus actualizado");
+            })
+            .catch(err => {
+                showLoading(false);
+                alert("Error al actualizar estatus");
+            });
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('nomCliente').value = "";
+            document.getElementById('telCliente').value = "";
+            document.getElementById('descripcion').value = "";
+            document.getElementById('accion').value = "";
+            document.getElementById('tienda').value = "";
+        }
+
+        function exportarCSV() {
+            if(globalQuejas.length === 0) { alert("Sin datos"); return; }
+            let csvContent = "ID,Fecha,RegistradoPor,Cliente,Telefono,Descripcion,Categoria,Distrito,SOP,Tienda,Accion,Estatus\n";
+            
+            globalQuejas.forEach(q => {
+                let row = [
+                    q.id, q.fechaRecepcion, q.registradoPor, q.nomCliente, q.telCliente, 
+                    q.descripcion, q.categoria, q.distrito, q.sop, q.tienda, q.accion, q.estatus
+                ].map(item => String(item).replace(/,/g, " ")).join(","); // Limpiar comas
+                csvContent += row + "\n";
+            });
+            
+            const blob = new Blob([csvContent], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quejas_nube.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>
