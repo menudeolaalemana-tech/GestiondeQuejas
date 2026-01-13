@@ -231,31 +231,29 @@
         }
 
         function login() {
-            const baseDeDatos = {
-                admin: '1234admin',
-                rosalina: 'rp1234',
-                chava: 'sem0987',
-                rey: 'ort5678',
-                juan: 'picjua',
-                mil: '1000chuy',
-                anel: 'santoyosop',
-                luis: 'sopvill',
-                armando: 'avar0987',
-                ulises: 'andauli'
-            };
-        
-            const user = document.getElementById('username').value.toLowerCase().trim();
-            const pass = document.getElementById('password').value.trim();
-        
-            if (baseDeDatos[user] && baseDeDatos[user] === pass) {
+
+            const user = document.getElementById('username').value;
+
+            const pass = document.getElementById('password').value;
+
+            if((user === 'admin' && pass === '1234') || (user === 'empleado' && pass === '1234')) {
+
                 currentUser = user;
+
                 document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
+
                 document.getElementById('registradoPor').value = currentUser;
+
                 showScreen('registerScreen');
+
                 document.getElementById('fechaRecepcion').valueAsDate = new Date();
+
             } else {
-                alert("Usuario o contraseña incorrectos");
+
+                alert("Incorrecto");
+
             }
+
         }
 
 
@@ -407,4 +405,5 @@
     </script>
 </body>
 </html>
+
 
