@@ -51,7 +51,6 @@
         <input type="text" id="username" placeholder="Usuario">
         <input type="password" id="password" placeholder="Contraseña">
         <button onclick="login()">Ingresar</button>
-        <p style="font-size: 12px; color: gray;">Admin: admin / 1234<br>Empleado: empleado / 1234</p>
     </div>
 
     <div id="registerScreen" class="screen">
@@ -80,7 +79,7 @@
             </div>
             <div>
                 <label>Teléfono Cliente:</label>
-                <input type="text" id="telCliente" placeholder="555-0000">
+                <input type="text" id="telCliente" placeholder="(477) 000 0000">
             </div>
             <div class="full-width">
                 <label>Descripción:</label>
@@ -89,10 +88,15 @@
             <div>
                 <label>Categoría:</label>
                 <select id="categoria">
-                    <option value="calidad">calidad</option>
-                    <option value="atención">atención</option>
-                    <option value="servicio">servicio</option>
-                    <option value="otro">otro</option>
+                    <option value="variaciondePeso">Variación de peso</option>
+                    <option value="productoCambiado">Producto cambiado</option>
+                    <option value="calidaddeProducto">Calidad de producto</option>
+                    <option value="demoras">Demoras</option>
+                    <option value="faltadeTicket">Falta de ticket</option>
+                    <option value="negoProducto">Negó producto</option>
+                    <option value="malaAtencion">Mala Atención</option>
+                    <option value="higiene">Higiene</option>
+                    <option value="otros">Otros</option>
                 </select>
             </div>
             <div>
@@ -103,7 +107,6 @@
                     <option value="Distrito 3">Distrito 3</option>
                     <option value="Distrito 4">Distrito 4</option>
                     <option value="Distrito 5">Distrito 5</option>
-                    <option value="Distrito 6">Distrito 6</option>
                 </select>
             </div>
             <div>
@@ -119,7 +122,48 @@
             </div>
             <div>
                 <label>Tienda:</label>
-                <input type="text" id="tienda" placeholder="Ej: Centro Max">
+                <select id="tienda">
+                    <option value="01 AV. MEXICO">01 AV. MEXICO</option>
+                    <option value="02 BELISARIO">02 BELISARIO</option>
+                    <option value="03 BALCONES">03 BALCONES</option>
+                    <option value="05 TORRES LANDA">05 TORRES LANDA</option>
+                    <option value="06 PRADERA">06 PRADERA</option>
+                    <option value="07 ABASTOS">07 ABASTOS</option>
+                    <option value="08 SAN MIGUEL">08 SAN MIGUEL</option>
+                    <option value="09 MADRAZO">09 MADRAZO</option>
+                    <option value="10 DELTA">10 DELTA</option>
+                    <option value="11 JUAREZ">11 JUAREZ</option>
+                    <option value="12 ECHEVESTE">12 ECHEVESTE</option>
+                    <option value="13 SAN PEDRO">13 SAN PEDRO</option>
+                    <option value="14 COECILLO">14 COECILLO</option>
+                    <option value="15 LEON II">15 LEON II</option>
+                    <option value="16 TROJES">16 TROJES</option>
+                    <option value="17 SANTA CLARA">17 SANTA CLARA</option>
+                    <option value="18 OLIMPICA">18 OLIMPICA</option>
+                    <option value="19 VILLAS DE LEON">19 VILLAS DE LEON</option>
+                    <option value="21 SION">21 SION</option>
+                    <option value="22 VALLE REAL">22 VALLE REAL</option>
+                    <option value="23 HIDALGO 1">23 HIDALGO 1</option>
+                    <option value="25 TELLEZ">25 TELLEZ</option>
+                    <option value="26 LOMAS DE MEDINA">26 LOMAS DE MEDINA</option>
+                    <option value="27 BOCANEGRA">27 BOCANEGRA</option>
+                    <option value="28 MANDARINAS">28 MANDARINAS</option>
+                    <option value="29 JOYAS">29 JOYAS</option>
+                    <option value="30 AUSTRI">30 AUSTRI</option>
+                    <option value="31 IBARRILLA">31 IBARRILLA</option>
+                    <option value="32 CARCAMOS">32 CARCAMOS</option>
+                    <option value="33 VILLAS DE SAN JUAN">33 VILLAS DE SAN JUAN</option>
+                    <option value="34 MIRADOR">34 MIRADOR</option>
+                    <option value="35 SAN FRANCISCO">35 SAN FRANCISCO</option>
+                    <option value="36 PASEO DE LA PRESA">36 PASEO DE LA PRESA</option>
+                    <option value="37 RIVERA CENTRO">37 RIVERA CENTRO</option>
+                    <option value="38 SAN JUAN BOSCO">38 SAN JUAN BOSCO</option>
+                    <option value="39 LA MERCED">39 LA MERCED</option>
+                    <option value="40 21 DE MARZO">40 21 DE MARZO</option>
+                    <option value="42 CARRO VERDE">42 CARRO VERDE</option>
+                    <option value="43 LA LUZ">43 LA LUZ</option>
+                    <option value="44 SILAO">44 SILAO</option>
+                </select>
             </div>
             <div>
                 <label>Acción:</label>
@@ -187,16 +231,35 @@
         }
 
         function login() {
+            // 1. Aquí defines todos tus usuarios y contraseñas
+            const baseDeDatos = {
+                'admin': '1234admin',
+                'rosalina': 'rp1234',
+                'chava': 'sem0987',
+                'rey': 'ort5678',
+                'juan': 'picjua'
+                'mil': '1000chuy'
+                'anel': 'santoyosop'
+                'luis': 'sopvill'
+                'armando': 'avar0987'
+                'ulises': 'andauli'
+                
+            };
+        
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
-            if((user === 'admin' && pass === '1234') || (user === 'empleado' && pass === '1234')) {
+        
+            // 2. La lógica verifica si el usuario existe Y si la contraseña coincide
+            if (baseDeDatos[user] && baseDeDatos[user] === pass) {
+                
                 currentUser = user;
                 document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
                 document.getElementById('registradoPor').value = currentUser;
                 showScreen('registerScreen');
                 document.getElementById('fechaRecepcion').valueAsDate = new Date();
+        
             } else {
-                alert("Incorrecto");
+                alert("Usuario o contraseña incorrectos");
             }
         }
 
@@ -348,6 +411,7 @@
     </script>
 </body>
 </html>
+
 
 
 
