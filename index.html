@@ -397,7 +397,7 @@
                 let row = [
                     q.id, q.fechaRecepcion, q.registradoPor, q.nomCliente, q.telCliente, 
                     q.descripcion, q.categoria, q.distrito, q.sop, q.tienda, q.accion, q.estatus
-                ].map(item => String(item).replace(/,/g, " ")).join(","); // Limpiar comas
+                ].map(item => String(item).replace(/,/g, " ")).join(","); // Limpiar_comas
                 csvContent += row + "\n";
             });
             
@@ -411,6 +411,7 @@
     </script>
 </body>
 </html>
+
 
 
 
