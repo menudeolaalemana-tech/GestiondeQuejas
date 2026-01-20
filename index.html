@@ -292,9 +292,12 @@
 
             showLoading(true);
 
+            // PASO 1: CREAR EL FOLIO (ID) AQUÍ PARA PODER MOSTRARLO DESPUÉS
+            const folioID = Date.now(); 
+
             // Crear objeto FormData para enviar
             const form = new FormData();
-            form.append('id', Date.now());
+            form.append('id', folioID); // Usamos la variable que creamos arriba
             form.append('registradoPor', currentUser);
             form.append('fechaRecepcion', document.getElementById('fechaRecepcion').value);
             form.append('fechaSuceso', document.getElementById('fechaSuceso').value);
@@ -315,7 +318,8 @@
             .then(data => {
                 showLoading(false);
                 if(data.result === 'success') {
-                    alert("¡Queja guardada en la Nube exitosamente!");
+                    // PASO 2: MOSTRAR ALERTA CON EL FOLIO
+                    alert("✅ REGISTRO EXITOSO\n\nSu folio es: " + folioID + "\n\nGuarde este número para futuras referencias.");
                     limpiarFormulario();
                 } else {
                     alert("Error al guardar: " + JSON.stringify(data));
