@@ -69,9 +69,14 @@
                 <label>Fecha Recibida:</label>
                 <input type="date" id="fechaRecepcion">
             </div>
+            
             <div>
                 <label>Fecha Suceso:</label>
                 <input type="date" id="fechaSuceso">
+            </div>
+            <div class="full-width">
+                <label>Hora Aprox. del Suceso:</label>
+                <input type="time" id="horaSuceso">
             </div>
             <div>
                 <label>Nombre Cliente:</label>
@@ -219,7 +224,7 @@
         // ==========================================
 
         let currentUser = "";
-        let globalQuejas = []; // Para guardar los datos descargados
+        let globalQuejas = []; 
 
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'flex' : 'none';
@@ -231,7 +236,6 @@
         }
 
         function login() {
-            // 1. Aquí defines todos tus usuarios y contraseñas
             const baseDeDatos = {
                 'admin': '1234admin',
                 'rosalina': 'rp1234',
@@ -248,20 +252,16 @@
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
 
-            // 2. La lógica verifica si el usuario existe Y si la contraseña coincide
             if (baseDeDatos[user] && baseDeDatos[user] === pass) {
-                
                 currentUser = user;
                 document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
                 document.getElementById('registradoPor').value = currentUser;
                 showScreen('registerScreen');
                 document.getElementById('fechaRecepcion').valueAsDate = new Date();
-
             } else {
                 alert("Usuario o contraseña incorrectos");
             }
         }
-
 
         function logout() {
             if(confirm("Salir?")) {
@@ -284,7 +284,12 @@
             form.append('id', Date.now());
             form.append('registradoPor', currentUser);
             form.append('fechaRecepcion', document.getElementById('fechaRecepcion').value);
+            
+            // --- AQUÍ ESTÁN LOS CAMPOS NUEVOS ---
             form.append('fechaSuceso', document.getElementById('fechaSuceso').value);
+            form.append('horaSuceso', document.getElementById('horaSuceso').value);
+            // ------------------------------------
+
             form.append('nomCliente', document.getElementById('nomCliente').value);
             form.append('telCliente', document.getElementById('telCliente').value);
             form.append('descripcion', document.getElementById('descripcion').value);
@@ -320,11 +325,10 @@
 
         function cargarDatosCloud() {
             showLoading(true);
-            // Peticion GET con parametro action=read
             fetch(GOOGLE_SCRIPT_URL + "?action=read")
             .then(res => res.json())
             .then(data => {
-                globalQuejas = data; // Guardamos en memoria para exportar
+                globalQuejas = data; 
                 renderTable(data);
                 showLoading(false);
             })
@@ -338,7 +342,6 @@
             const tbody = document.querySelector('#quejasTable tbody');
             tbody.innerHTML = "";
             
-            // Mostrar las mas recientes primero (invertir array)
             quejas.reverse().forEach(q => {
                 let fecha = q.fechaRecepcion ? q.fechaRecepcion.substring(0,10) : "";
                 
@@ -363,7 +366,6 @@
 
         function actualizarEstatusCloud(id, nuevoEstatus) {
             showLoading(true);
-            // Usamos POST pero simulamos update
             const form = new FormData();
             form.append('action', 'updateStatus');
             form.append('id', id);
@@ -387,17 +389,33 @@
             document.getElementById('descripcion').value = "";
             document.getElementById('accion').value = "";
             document.getElementById('tienda').value = "";
+            // Limpiar fecha y hora suceso
+            document.getElementById('fechaSuceso').value = "";
+            document.getElementById('horaSuceso').value = "";
         }
 
         function exportarCSV() {
             if(globalQuejas.length === 0) { alert("Sin datos"); return; }
-            let csvContent = "ID,Fecha,RegistradoPor,Cliente,Telefono,Descripcion,Categoria,Distrito,SOP,Tienda,Accion,Estatus\n";
+            // ENCABEZADOS ACTUALIZADOS PARA EXCEL
+            let csvContent = "ID,Fecha_Recepcion,Fecha_Suceso,Hora_Suceso,RegistradoPor,Cliente,Telefono,Descripcion,Categoria,Distrito,SOP,Tienda,Accion,Estatus\n";
             
             globalQuejas.forEach(q => {
                 let row = [
-                    q.id, q.fechaRecepcion, q.registradoPor, q.nomCliente, q.telCliente, 
-                    q.descripcion, q.categoria, q.distrito, q.sop, q.tienda, q.accion, q.estatus
-                ].map(item => String(item).replace(/,/g, " ")).join(","); // Limpiar_comas
+                    q.id, 
+                    q.fechaRecepcion, 
+                    q.fechaSuceso,   // NUEVO
+                    q.horaSuceso,    // NUEVO
+                    q.registradoPor, 
+                    q.nomCliente, 
+                    q.telCliente, 
+                    q.descripcion, 
+                    q.categoria, 
+                    q.distrito, 
+                    q.sop, 
+                    q.tienda, 
+                    q.accion, 
+                    q.estatus
+                ].map(item => String(item).replace(/,/g, " ")).join(","); 
                 csvContent += row + "\n";
             });
             
@@ -405,14 +423,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'quejas_nube.csv';
+            a.download = 'quejas_nube_completo.csv';
             a.click();
         }
     </script>
 </body>
 </html>
-
-
-
-
-
