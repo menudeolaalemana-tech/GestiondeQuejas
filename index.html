@@ -9,7 +9,7 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         header { background-color: #FFC107; width: 100%; padding: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
         h1 { margin: 0; color: #333; }
-        .screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 1000px; margin-top: 30px; display: none; margin-bottom: 50px; }
+        .screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 1200px; margin-top: 30px; display: none; margin-bottom: 50px; } /* Aumenté un poco el ancho máximo */
         .active { display: block; }
         .login-box { max-width: 400px; margin: 50px auto; text-align: center; }
         input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
@@ -20,10 +20,16 @@
         .btn-danger:hover { background-color: #c82333; }
         .btn-success { background-color: #28a745; color: white; }
         .btn-success:hover { background-color: #218838; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
-        th { background-color: #333; color: white; }
+        
+        /* Estilos de Tabla Mejorados */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85em; min-width: 1500px; } /* Min-width fuerza el scroll para que no se apriete todo */
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #333; color: white; position: sticky; top: 0; }
         tr:nth-child(even) { background-color: #f2f2f2; }
+        
+        /* Columna de descripción más ancha */
+        .desc-col { min-width: 200px; max-width: 300px; white-space: pre-wrap; }
+        
         .status-select { padding: 5px; font-size: 0.9em; border-radius: 4px; border: 1px solid #ccc; background-color: white; cursor: pointer; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
@@ -198,11 +204,19 @@
             <table id="quejasTable">
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Fecha Rec.</th>
+                        <th>Fecha Suceso</th>
+                        <th>Hora Suceso</th>
                         <th>Registró</th>
                         <th>Cliente</th>
-                        <th>Supervisor</th>
+                        <th>Teléfono</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
                         <th>Distrito</th>
+                        <th>Supervisor</th>
+                        <th>Tienda</th>
+                        <th>Acción</th>
                         <th>Estatus (Nube)</th>
                     </tr>
                 </thead>
@@ -212,15 +226,14 @@
         </div>
         <br>
         <button class="btn-success" onclick="exportarCSV()">Descargar CSV (Excel)</button>
-        <p style="font-size:12px; color:gray; margin-top:10px;">* Nota: El botón de borrar se ha desactivado por seguridad. Para borrar registros permanentemente, hazlo directo en tu Google Sheet.</p>
+        <p style="font-size:12px; color:gray; margin-top:10px;">* Nota: Desliza la tabla hacia la derecha para ver todos los campos.</p>
     </div>
 
     <script>
         // ==========================================
         // CONFIGURACIÓN OBLIGATORIA
         // ==========================================
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT ENTRE LAS COMILLAS:
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXlRnJgYA5eeB02fBFPblF4mDdNxICwm1iXZw6UswLiJxiAmU8BlhcMURaQEh-UpOGpg/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-NmDw0KHDCoE_1atKEsLiv3Qgz6qLWNSiCaOrs2Q34CaFt-e2wBfViShv-QjR2HbI4w/exec";
         // ==========================================
 
         let currentUser = "";
@@ -284,12 +297,8 @@
             form.append('id', Date.now());
             form.append('registradoPor', currentUser);
             form.append('fechaRecepcion', document.getElementById('fechaRecepcion').value);
-            
-            // --- AQUÍ ESTÁN LOS CAMPOS NUEVOS ---
             form.append('fechaSuceso', document.getElementById('fechaSuceso').value);
             form.append('horaSuceso', document.getElementById('horaSuceso').value);
-            // ------------------------------------
-
             form.append('nomCliente', document.getElementById('nomCliente').value);
             form.append('telCliente', document.getElementById('telCliente').value);
             form.append('descripcion', document.getElementById('descripcion').value);
@@ -343,7 +352,9 @@
             tbody.innerHTML = "";
             
             quejas.reverse().forEach(q => {
-                let fecha = q.fechaRecepcion ? q.fechaRecepcion.substring(0,10) : "";
+                // Formateo simple de fecha
+                let fechaRec = q.fechaRecepcion ? q.fechaRecepcion.substring(0,10) : "";
+                let fechaSuc = q.fechaSuceso ? q.fechaSuceso.substring(0,10) : "";
                 
                 let selectEstatus = `
                     <select class="status-select" onchange="actualizarEstatusCloud(${q.id}, this.value)">
@@ -352,12 +363,21 @@
                     </select>
                 `;
 
+                // AQUI SE CONSTRUYE LA FILA CON TODOS LOS DATOS
                 let row = `<tr>
-                    <td>${fecha}</td>
+                    <td><small>${q.id}</small></td>
+                    <td>${fechaRec}</td>
+                    <td>${fechaSuc}</td>
+                    <td>${q.horaSuceso || ''}</td>
                     <td><b>${q.registradoPor}</b></td>
                     <td>${q.nomCliente}</td>
-                    <td>${q.sop}</td>
+                    <td>${q.telCliente || ''}</td>
+                    <td class="desc-col">${q.descripcion || ''}</td>
+                    <td>${q.categoria}</td>
                     <td>${q.distrito}</td>
+                    <td>${q.sop}</td>
+                    <td>${q.tienda}</td>
+                    <td>${q.accion || ''}</td>
                     <td>${selectEstatus}</td>
                 </tr>`;
                 tbody.innerHTML += row;
@@ -389,22 +409,20 @@
             document.getElementById('descripcion').value = "";
             document.getElementById('accion').value = "";
             document.getElementById('tienda').value = "";
-            // Limpiar fecha y hora suceso
             document.getElementById('fechaSuceso').value = "";
             document.getElementById('horaSuceso').value = "";
         }
 
         function exportarCSV() {
             if(globalQuejas.length === 0) { alert("Sin datos"); return; }
-            // ENCABEZADOS ACTUALIZADOS PARA EXCEL
             let csvContent = "ID,Fecha_Recepcion,Fecha_Suceso,Hora_Suceso,RegistradoPor,Cliente,Telefono,Descripcion,Categoria,Distrito,SOP,Tienda,Accion,Estatus\n";
             
             globalQuejas.forEach(q => {
                 let row = [
                     q.id, 
                     q.fechaRecepcion, 
-                    q.fechaSuceso,   // NUEVO
-                    q.horaSuceso,    // NUEVO
+                    q.fechaSuceso, 
+                    q.horaSuceso,
                     q.registradoPor, 
                     q.nomCliente, 
                     q.telCliente, 
@@ -415,7 +433,7 @@
                     q.tienda, 
                     q.accion, 
                     q.estatus
-                ].map(item => String(item).replace(/,/g, " ")).join(","); 
+                ].map(item => String(item).replace(/,/g, " ").replace(/\n/g, " ")).join(","); 
                 csvContent += row + "\n";
             });
             
@@ -429,4 +447,3 @@
     </script>
 </body>
 </html>
-
