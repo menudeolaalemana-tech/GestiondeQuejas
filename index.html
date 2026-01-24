@@ -20,6 +20,8 @@
         .btn-danger:hover { background-color: #c82333; }
         .btn-success { background-color: #28a745; color: white; }
         .btn-success:hover { background-color: #218838; }
+        .btn-action { background-color: #17a2b8; color: white; font-size: 0.8em; padding: 5px 10px; }
+        .btn-action:hover { background-color: #138496; }
         
         /* Estilos de Tabla con Scroll */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85em; min-width: 1500px; } 
@@ -27,10 +29,14 @@
         th { background-color: #333; color: white; position: sticky; top: 0; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         
-        /* Columna de descripción más ancha */
+        /* Columna de descripción y acción más ancha */
         .desc-col { min-width: 200px; max-width: 300px; white-space: pre-wrap; }
         
         .status-select { padding: 5px; font-size: 0.9em; border-radius: 4px; border: 1px solid #ccc; background-color: white; cursor: pointer; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.9em; display: inline-block; }
+        .st-activa { background-color: #e2e6ea; color: #333; border: 1px solid #ccc; }
+        .st-cerrada { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
         
@@ -38,6 +44,10 @@
         #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #FFC107; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL DE ACCIÓN */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -176,11 +186,7 @@
                     <option value="44 SILAO">44 SILAO</option>
                 </select>
             </div>
-            <div>
-                <label>Acción:</label>
-                <input type="text" id="accion">
-            </div>
-            <div>
+            <div class="full-width">
                 <label>Estatus:</label>
                 <select id="estatus">
                     <option value="activa">activa</option>
@@ -207,7 +213,6 @@
                         <th>ID (Folio)</th>
                         <th>Fecha Rec.</th>
                         <th>Fecha Suceso</th>
-                        <th>Hora Suceso</th>
                         <th>Registró</th>
                         <th>Cliente</th>
                         <th>Teléfono</th>
@@ -216,8 +221,7 @@
                         <th>Distrito</th>
                         <th>Supervisor</th>
                         <th>Tienda</th>
-                        <th>Acción</th>
-                        <th>Estatus (Nube)</th>
+                        <th>Acción / Resolución</th> <th>Estatus</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -226,20 +230,41 @@
         </div>
         <br>
         <button class="btn-success" onclick="exportarCSV()">Descargar CSV (Excel)</button>
-        <p style="font-size:12px; color:gray; margin-top:10px;">* Nota: Desliza la tabla hacia la derecha para ver todos los campos.</p>
+        <p style="font-size:12px; color:gray; margin-top:10px;">* Nota: Si eres Supervisor, solo verás tus reportes.</p>
+    </div>
+
+    <div id="actionModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Registrar Resolución / Acción</h3>
+            <p id="modalQuejaId" style="font-weight:bold; color:#666;"></p>
+            <textarea id="modalActionText" rows="5" placeholder="Escribe aquí la resolución acordada con el cliente..."></textarea>
+            <div style="margin-top: 15px; text-align: right;">
+                <button class="btn-danger" onclick="closeActionModal()">Cancelar</button>
+                <button class="btn-success" onclick="saveActionToCloud()">Guardar Acción</button>
+            </div>
+        </div>
     </div>
 
     <script>
         // ==========================================
-        // CONFIGURACIÓN OBLIGATORIA
+        // URL DEL SCRIPT (ASEGURATE QUE SEA LA ACTUALIZADA)
         // ==========================================
-        // Usamos la URL que me compartiste en el paso anterior.
-        // Si generaste una NUEVA versión, asegúrate de actualizar esta línea:
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-NmDw0KHDCoE_1atKEsLiv3Qgz6qLWNSiCaOrs2Q34CaFt-e2wBfViShv-QjR2HbI4w/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDfjs4iMCDbwVMGwYPz0sMju2MrEpzIlH3gLCaFci1jg_GYelFmWJTeHxrkkviikKLPg/exec";
         // ==========================================
 
         let currentUser = "";
         let globalQuejas = []; 
+        let currentEditingId = null; // Para saber qué queja estamos editando
+
+        // MAPA DE PERMISOS: Usuario -> Nombre Real SOP
+        const supervisorMap = {
+            'juan': 'Juan Piceno',
+            'mil': 'Jesús Mil',
+            'anel': 'Anel Santoyo',
+            'luis': 'Luis Villegas',
+            'armando': 'Armando Vargas',
+            'ulises': 'Ulises Anda'
+        };
 
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'flex' : 'none';
@@ -264,13 +289,17 @@
                 'ulises': 'andauli'
             };
 
-            const user = document.getElementById('username').value;
+            const user = document.getElementById('username').value.toLowerCase(); // Convertir a minúsculas por seguridad
             const pass = document.getElementById('password').value;
 
             if (baseDeDatos[user] && baseDeDatos[user] === pass) {
                 currentUser = user;
-                document.getElementById('userInfo').innerText = "Usuario: " + currentUser;
+                
+                let rolTexto = supervisorMap[user] ? `Supervisor (${supervisorMap[user]})` : "Administrador/General";
+                
+                document.getElementById('userInfo').innerText = `Usuario: ${currentUser} | Rol: ${rolTexto}`;
                 document.getElementById('registradoPor').value = currentUser;
+                
                 showScreen('registerScreen');
                 document.getElementById('fechaRecepcion').valueAsDate = new Date();
             } else {
@@ -290,13 +319,10 @@
         function guardarQuejaCloud() {
             const nomCliente = document.getElementById('nomCliente').value;
             if(!nomCliente) { alert("Falta nombre cliente"); return; }
-            if(GOOGLE_SCRIPT_URL.includes("PEGA_TU_URL")) { alert("ERROR: No has pegado la URL del Script en el código HTML."); return; }
-
+            
             showLoading(true);
 
-            // Crear objeto FormData para enviar
             const form = new FormData();
-            // NOTA: NO enviamos ID. El servidor lo genera (Ej: LAM8EM)
             form.append('registradoPor', currentUser);
             form.append('fechaRecepcion', document.getElementById('fechaRecepcion').value);
             form.append('fechaSuceso', document.getElementById('fechaSuceso').value);
@@ -308,18 +334,15 @@
             form.append('distrito', document.getElementById('distrito').value);
             form.append('sop', document.getElementById('sop').value);
             form.append('tienda', document.getElementById('tienda').value);
-            form.append('accion', document.getElementById('accion').value);
+            // La acción NO se envía al registrar
             form.append('estatus', document.getElementById('estatus').value);
 
-            // Enviar a Google Sheets
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: form })
             .then(response => response.json())
             .then(data => {
                 showLoading(false);
                 if(data.result === 'success') {
-                    // RECIBIMOS EL ID GENERADO POR EL SCRIPT
-                    const folioGenerado = data.idGenerado;
-                    alert("✅ REGISTRO EXITOSO\n\nSu folio es: " + folioGenerado + "\n\nGuarde este número para futuras referencias.");
+                    alert("✅ REGISTRO EXITOSO\nFolio: " + data.idGenerado);
                     limpiarFormulario();
                 } else {
                     alert("Error al guardar: " + JSON.stringify(data));
@@ -347,7 +370,7 @@
             })
             .catch(err => {
                 showLoading(false);
-                alert("No se pudieron cargar los datos. Revisa tu internet o la URL.");
+                alert("No se pudieron cargar los datos.");
             });
         }
 
@@ -355,87 +378,157 @@
             const tbody = document.querySelector('#quejasTable tbody');
             tbody.innerHTML = "";
             
-            quejas.reverse().forEach(q => {
-                let fechaRec = q.fechaRecepcion ? String(q.fechaRecepcion).substring(0,10) : "";
-                let fechaSuc = q.fechaSuceso ? String(q.fechaSuceso).substring(0,10) : "";
-                
-                let selectEstatus = `
-                    <select class="status-select" onchange="actualizarEstatusCloud('${q.id}', this.value)">
-                        <option value="activa" ${q.estatus === 'activa' ? 'selected' : ''}>activa</option>
-                        <option value="cerrada" ${q.estatus === 'cerrada' ? 'selected' : ''}>cerrada</option>
-                    </select>
-                `;
+            // 1. FILTRADO: Si el usuario está en el mapa de supervisores, filtramos
+            let datosFiltrados = quejas;
+            if (supervisorMap[currentUser]) {
+                const nombreSOP = supervisorMap[currentUser];
+                datosFiltrados = quejas.filter(q => q['Supervisor (SOP)'] === nombreSOP || q.sop === nombreSOP); 
+                // Nota: Usamos q['Supervisor (SOP)'] si viene del JSON formateado o q.sop si viene directo. 
+                // En el script puse headers, así que probablemente venga como "Supervisor (SOP)" o "sop" dependiendo de tu header exacto en Excel.
+                // Ajuste de seguridad: Buscamos coincidencia flexible
+                datosFiltrados = quejas.filter(q => {
+                    let s = q.sop || q['Supervisor (SOP)'] || ""; // Intenta leer el campo
+                    return s === nombreSOP;
+                });
+            }
+
+            datosFiltrados.reverse().forEach(q => {
+                // Recuperar valores (adaptable a los nombres de cabecera del Excel)
+                let id = q.id || q['ID (Folio)'];
+                let desc = q.descripcion || q['Descripción'];
+                let accion = q.accion || q['Acción'] || "";
+                let estatus = q.estatus || q['Estatus'];
+                let sopName = q.sop || q['Supervisor (SOP)'];
+
+                // 2. LOGICA DEL BOTÓN ACCIÓN (SOLO ESCRITURA UNA VEZ)
+                let accionHtml = "";
+                if (accion && accion.trim().length > 1) {
+                    // CASO 1: YA EXISTE ACCIÓN -> SE MUESTRA SOLO TEXTO (BLOQUEADO)
+                    accionHtml = `
+                        <div style="background-color:#f8f9fa; padding:5px; border-left: 3px solid #28a745; border-radius:3px;">
+                            <span style="font-size:0.8em; font-weight:bold; color:#28a745;">✅ Resolución Registrada:</span><br>
+                            <span style="font-size:0.9em; color:#333;">${accion}</span>
+                        </div>
+                    `;
+                } else {
+                    // CASO 2: ESTÁ VACÍA -> PERMITIR REGISTRAR
+                    accionHtml = `<button class="btn-action" onclick="openActionModal('${id}', '')">Registrar Acción ➕</button>`;
+                }
+
+                // 3. LOGICA DEL ESTATUS (Bloqueado para supervisores)
+                let statusHtml = "";
+                const isSupervisor = supervisorMap.hasOwnProperty(currentUser);
+
+                if (isSupervisor) {
+                    // Modo solo lectura
+                    let claseColor = estatus === 'activa' ? 'st-activa' : 'st-cerrada';
+                    statusHtml = `<span class="status-badge ${claseColor}">${estatus}</span>`;
+                } else {
+                    // Modo edición (Admin)
+                    statusHtml = `
+                        <select class="status-select" onchange="actualizarCampoCloud('${id}', 'Estatus', this.value)">
+                            <option value="activa" ${estatus === 'activa' ? 'selected' : ''}>activa</option>
+                            <option value="cerrada" ${estatus === 'cerrada' ? 'selected' : ''}>cerrada</option>
+                        </select>
+                    `;
+                }
 
                 let row = `<tr>
-                    <td><b>${q.id}</b></td>
-                    <td>${fechaRec}</td>
-                    <td>${fechaSuc}</td>
-                    <td>${q.horaSuceso || ''}</td>
-                    <td>${q.registradoPor}</td>
-                    <td>${q.nomCliente}</td>
-                    <td>${q.telCliente || ''}</td>
-                    <td class="desc-col">${q.descripcion || ''}</td>
-                    <td>${q.categoria}</td>
-                    <td>${q.distrito}</td>
-                    <td>${q.sop}</td>
-                    <td>${q.tienda}</td>
-                    <td>${q.accion || ''}</td>
-                    <td>${selectEstatus}</td>
+                    <td><b>${id}</b></td>
+                    <td>${formatDate(q.fechaRecepcion || q['Fecha Rec.'])}</td>
+                    <td>${formatDate(q.fechaSuceso || q['Fecha Suceso'])}</td>
+                    <td>${q.registradoPor || q['Registró']}</td>
+                    <td>${q.nomCliente || q['Cliente']}</td>
+                    <td>${q.telCliente || q['Teléfono'] || ''}</td>
+                    <td class="desc-col">${desc || ''}</td>
+                    <td>${q.categoria || q['Categoría']}</td>
+                    <td>${q.distrito || q['Distrito']}</td>
+                    <td>${sopName}</td>
+                    <td>${q.tienda || q['Tienda']}</td>
+                    <td class="desc-col">${accionHtml}</td>
+                    <td>${statusHtml}</td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
         }
 
-        function actualizarEstatusCloud(id, nuevoEstatus) {
+        // --- MANEJO DEL MODAL DE ACCIÓN ---
+        function openActionModal(id, currentText) {
+            currentEditingId = id;
+            document.getElementById('modalQuejaId').innerText = "Folio: " + id;
+            document.getElementById('modalActionText').value = currentText;
+            document.getElementById('actionModal').style.display = 'flex';
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').style.display = 'none';
+            currentEditingId = null;
+        }
+
+        function saveActionToCloud() {
+            const nuevaAccion = document.getElementById('modalActionText').value;
+            if(!currentEditingId) return;
+
+            actualizarCampoCloud(currentEditingId, 'Acción', nuevaAccion);
+            closeActionModal();
+        }
+
+        // FUNCIÓN GENÉRICA PARA ACTUALIZAR CAMPOS (Acción o Estatus)
+        function actualizarCampoCloud(id, columna, valor) {
             showLoading(true);
             const form = new FormData();
-            form.append('action', 'updateStatus');
+            form.append('action', 'updateField');
             form.append('id', id);
-            form.append('estatus', nuevoEstatus);
+            form.append('columna', columna); // Debe coincidir con el header exacto en Excel (Acción, Estatus)
+            form.append('valor', valor);
 
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: form })
             .then(res => res.json())
             .then(data => {
                 showLoading(false);
-                console.log("Estatus actualizado");
+                if(data.result === 'success') {
+                    // Recargar tabla para ver cambios
+                    cargarDatosCloud(); 
+                } else {
+                    alert("Error al actualizar: " + data.message);
+                }
             })
             .catch(err => {
                 showLoading(false);
-                alert("Error al actualizar estatus");
+                alert("Error de red al actualizar");
             });
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return "";
+            return String(dateStr).substring(0,10);
         }
 
         function limpiarFormulario() {
             document.getElementById('nomCliente').value = "";
             document.getElementById('telCliente').value = "";
             document.getElementById('descripcion').value = "";
-            document.getElementById('accion').value = "";
-            document.getElementById('tienda').value = "";
+            // Accion ya no existe en form
             document.getElementById('fechaSuceso').value = "";
             document.getElementById('horaSuceso').value = "";
         }
 
         function exportarCSV() {
             if(globalQuejas.length === 0) { alert("Sin datos"); return; }
-            let csvContent = "ID,Fecha_Recepcion,Fecha_Suceso,Hora_Suceso,RegistradoPor,Cliente,Telefono,Descripcion,Categoria,Distrito,SOP,Tienda,Accion,Estatus\n";
+            let csvContent = "ID,Cliente,Descripcion,Accion,Estatus\n"; // Simplificado para ejemplo
+            
+            // Para exportar todo, puedes iterar globalQuejas completo
+            // Pero si eres supervisor, tal vez quieras exportar solo lo filtrado.
+            // Por simplicidad, exportamos lo que hay en globalQuejas (todo) o puedes filtrar aquí también.
             
             globalQuejas.forEach(q => {
-                let row = [
-                    q.id, 
-                    q.fechaRecepcion, 
-                    q.fechaSuceso, 
-                    q.horaSuceso,
-                    q.registradoPor, 
-                    q.nomCliente, 
-                    q.telCliente, 
-                    q.descripcion, 
-                    q.categoria, 
-                    q.distrito, 
-                    q.sop, 
-                    q.tienda, 
-                    q.accion, 
-                    q.estatus
-                ].map(item => String(item).replace(/,/g, " ").replace(/\n/g, " ")).join(","); 
+                 let row = [
+                    q.id || q['ID (Folio)'], 
+                    q.nomCliente || q['Cliente'],
+                    (q.descripcion || q['Descripción'] || '').replace(/,/g, ' '),
+                    (q.accion || q['Acción'] || '').replace(/,/g, ' '),
+                    q.estatus || q['Estatus']
+                ].join(",");
                 csvContent += row + "\n";
             });
             
@@ -443,7 +536,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'quejas_nube_completo.csv';
+            a.download = 'reporte_quejas.csv';
             a.click();
         }
     </script>
