@@ -127,14 +127,11 @@
                     <option value="Distrito 2">Distrito 2</option>
                     <option value="Distrito 3">Distrito 3</option>
                     <option value="Distrito 4">Distrito 4</option>
-                    <option value="Distrito 5">Distrito 5</option>
                 </select>
             </div>
             <div>
                 <label>Supervisor (SOP):</label>
                 <select id="sop">
-                    <option value="Anel Santoyo">Anel Santoyo</option>
-                    <option value="Jesús Mil">Jesús Mil</option>
                     <option value="Ulises Anda">Ulises Anda</option>
                     <option value="Luis Villegas">Luis Villegas</option>
                     <option value="Armando Vargas">Armando Vargas</option>
@@ -259,11 +256,10 @@
         // MAPA DE PERMISOS: Usuario -> Nombre Real SOP
         const supervisorMap = {
             'juan': 'Juan Piceno',
-            'mil': 'Jesús Mil',
-            'anel': 'Anel Santoyo',
             'luis': 'Luis Villegas',
             'armando': 'Armando Vargas',
-            'ulises': 'Ulises Anda'
+            'ulises': 'Ulises Anda',
+            'diana': 'Diana RH'            
         };
 
         function showLoading(show) {
@@ -282,11 +278,11 @@
                 'chava': 'sem0987',
                 'rey': 'ort5678',
                 'juan': 'picjua',
-                'mil': '1000chuy',
-                'anel': 'santoyosop',
                 'luis': 'sopvill',
                 'armando': 'avar0987',
-                'ulises': 'andauli'
+                'ulises': 'andauli',
+                'diana': 'dianaM2000'  
+                
             };
 
             const user = document.getElementById('username').value.toLowerCase(); // Convertir a minúsculas por seguridad
